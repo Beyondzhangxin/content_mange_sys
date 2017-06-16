@@ -1,0 +1,91 @@
+.icon-cms {
+    background: url('icons/cms.png') no-repeat center center;
+    }
+
+.icon-set {
+    background: url('icons/set.png') no-repeat center center;
+    }
+
+.icon-pub {
+    background: url('icons/pub.png') no-repeat center center;
+    }
+
+.icon-site {
+    background: url('icons/site.png') no-repeat center center;
+    }
+
+.icon-ch {
+    background: url('icons/ch.png') no-repeat center center;
+    }
+
+.icon-item {
+    background: url('icons/item.png') no-repeat center center;
+    }
+
+.icon-mod {
+    background: url('icons/mod.png') no-repeat center center;
+    }
+
+.icon-con {
+    background: url('icons/content.png') no-repeat center center;
+    }
+
+.icon-appr {
+    background: url('icons/appr.png') no-repeat center center;
+    }
+
+.icon-plan {
+    background: url('icons/sched.png') no-repeat center center;
+    }
+
+.icon-dept {
+    background: url('icons/dept.png') no-repeat center center;
+    }
+
+.icon-user {
+    background: url('icons/user.png') no-repeat center center;
+    }
+
+.icon-role {
+    background: url('icons/role.png') no-repeat center center;
+    }
+
+.icon-auth {
+    background: url("icons/auth.png") no-repeat center;
+    }
+
+.icon-res {
+    background: url("icons/res.png") no-repeat center;
+    }
+
+.icon-roletoauth {
+    background: url("icons/role-auth.png") no-repeat center;
+    }
+
+.icon-restoauth {
+    background: url("icons/auth-res.png") no-repeat center;
+    }
+
+.icon-rev {
+    background: url("icons/审核.png") no-repeat center;
+    }
+
+.icon-chrev {
+    background: url("icons/频道.png") no-repeat center;
+    }
+
+.icon-itemrev {
+    background: url("icons/栏目.png") no-repeat center;
+    }
+
+.icon-modrev {
+    background: url("icons/内容.png") no-repeat center;
+    }
+
+.icon-siterev {
+    background: url("icons/站点.png") no-repeat center;
+    }
+
+.icon-usertorole {
+    background: url("icons/用户角色.png") no-repeat center;
+    }

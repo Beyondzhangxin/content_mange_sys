@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans 
+	xmlns="http://www.springframework.org/schema/beans"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xmlns:sec="http://www.springframework.org/schema/security"
+    xsi:schemaLocation="
+    	http://www.springframework.org/schema/beans
+        http://www.springframework.org/schema/beans/spring-beans.xsd
+       	http://www.springframework.org/schema/security 
+	    http://www.springframework.org/schema/security/spring-security.xsd">
+ 
+    <!-- AOP 自动代理 -->
+    
+	<sec:http use-expressions="true" auto-config="true">
+    	<sec:csrf disabled="true"/>
+    	<!-- <sec:intercept-url pattern="/*.do" access="isAuthenticated()"/> -->
+		<sec:form-login 
+			login-page='/index.jsp' 
+			default-target-url='/login/success.do'
+			authentication-failure-url="/login/failure.do"
+			username-parameter="j_username"
+			password-parameter="j_password"
+			login-processing-url="/j_spring_security_check.do"
+			/>
+		<sec:logout 
+			logout-success-url="/index.html"
+			logout-url="/j_spring_security_logout.do"
+		/>
+	</sec:http>
+	
+	
+	<sec:authentication-manager>
+		<sec:ldap-authentication-provider
+			server-ref="securityLdapServer"
+			group-search-filter="member={0}"
+			user-search-filter="uid={0}"/>
+	</sec:authentication-manager>
+	
+	
+    <sec:ldap-server 
+    	id="securityLdapServer"
+    	url="ldap://192.168.1.209:389/dc=aiidc,dc=com,dc=cn"
+    	manager-dn="cn=Manager,dc=aiidc,dc=com,dc=cn"
+    	manager-password="htzh1234" />
+    
+</beans>

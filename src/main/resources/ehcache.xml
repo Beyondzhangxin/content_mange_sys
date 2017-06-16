@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ehcache xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:noNamespaceSchemaLocation="http://ehcache.org/ehcache.xsd"
+         updateCheck="false">
+    <cache name="baseCache"
+           eternal="false"
+           maxEntriesLocalHeap="200"
+           overflowToDisk="false"
+           diskPersistent="false"
+           timeToIdleSeconds="600"
+           statistics="true"
+           timeToLiveSeconds="600"/>
+</ehcache>
+
+<!-- <cache  
+    name="userCache"  
+    maxElementsInMemory="100"  
+    eternal="false"  
+    timeToIdleSeconds="1000"  
+    timeToLiveSeconds="6000"  
+    overflowToDisk="true"  
+/>   -->

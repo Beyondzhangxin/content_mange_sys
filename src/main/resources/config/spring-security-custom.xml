@@ -1,0 +1,195 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans:beans 
+	xmlns="http://www.springframework.org/schema/security"
+	xmlns:beans="http://www.springframework.org/schema/beans"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://www.springframework.org/schema/beans 
+	http://www.springframework.org/schema/beans/spring-beans.xsd
+    http://www.springframework.org/schema/security 
+    http://www.springframework.org/schema/security/spring-security.xsd">
+    
+    <global-method-security
+		pre-post-annotations="enabled" secured-annotations="enabled">
+	</global-method-security>
+	
+	<!-- 要使<sec:authorize url=" "> 起作用，要配置下面这个bean -->
+	<beans:bean id="customWebInvocationPrivilegeEvaluator" 
+			class="org.springframework.security.web.access.DefaultWebInvocationPrivilegeEvaluator">  
+       <beans:constructor-arg name="securityInterceptor" ref="customFilter" />  
+	</beans:bean>
+	  
+    <!-- 不要过滤图片等静态资源 -->
+	<http pattern="/**/*.jpg" security="none" />
+	<http pattern="/**/*.png" security="none" />
+	<http pattern="/**/*.gif" security="none" />
+	<http pattern="/**/*.css" security="none" />
+	<http pattern="/**/*.js" security="none" />
+	<http pattern="/**/*.ico" security="none" />
+	<http pattern="/**/*.html" security="none" />
+	<!-- 登录页面和忘记密码页面不过滤  -->
+	<http pattern="/index.html" security="none" />
+	<http pattern="/jsp/forgotpassword.jsp"	security="none" />
+	<http pattern="/jsp/temp.jsp"	security="none" />
+
+	
+	<http auto-config="true" use-expressions="true" access-decision-manager-ref="accessDecisionManager">
+		<!--配置登录页面
+	        login-page：登录页面
+	    	authentication-failure-url ：登录失败后跳转的页面
+	    	default-target-url：缺省的登录成功后跳转的页面，但当前此处没有实际意义，因为这登录页面
+	    	index.html中通过“$.ajax” 发起的登录调用，成功后在“success”回调函数中通过“window.location.href = 'logon/prepare.do'”进行了跳转
+	    	login-processing-url：登录时表单提交地址，这个是spring框架中的controller
+     	-->
+     	<!-- 关闭 CsrfFilter（跨站域请求伪造） 功能，如果开启这个功能则所有网页请求先要经过
+     	     CsrfFilter过滤，而要实现CsrfFilter过滤则每一个网页要加相关token配置，实现繁琐，故暂时关闭。
+     	-->
+     	<csrf disabled="true" />
+     	
+     	 <!--  以下配置解决网页中嵌入ifram 无法提取ifram中内容的问题：
+     	 	Refused to display 'http://localhost:8080/xxx' in a frame because it set 'X-Frame-Options' to 'DENY'.
+     	   这个问题引起的原因是Spring Security4默认是将'X-Frame-Options' 设置为 'DENY'
+     	   而现代浏览器都对跨域访问进行了严格控制，主要有以下三种控制设置：
+     	   DENY：浏览器拒绝当前页面加载任何Frame页面
+			SAMEORIGIN：frame页面的地址只能为同源域名下的页面
+			ALLOW-FROM：允许frame加载的页面地址
+     	   -->
+		 <headers>
+		            <frame-options policy="SAMEORIGIN" />
+		</headers>
+		
+		<form-login
+			authentication-failure-url="/loginFailure.html"
+			login-processing-url="/login"
+			login-page='/index.html' 
+			username-parameter="username"
+			password-parameter="password"
+			default-target-url='/login/success.do'
+		 />
+		<logout invalidate-session="true" logout-success-url="/index.html"
+			logout-url="/logout" />
+			
+		<!-- "记住我"功能，采用持久化策略（将用户的登录信息存放在数据库表中） -->
+		<remember-me data-source-ref="dataSource" />
+		
+		<!-- 检测失效的session超时、失效、无权限时定位到另外一个URL 	-->
+		<session-management session-authentication-strategy-ref="concurrentSessionControlStrategy" />
+
+		<!-- 没有权限的处理handle -->
+		<access-denied-handler ref="accessDeniedHandler"/>
+		
+		<!-- 增加一个自定义的filter，放在FILTER_SECURITY_INTERCEPTOR之前，
+		实现用户、角色、权限、资源的数据库管理。  -->
+		<custom-filter ref="customFilter" before="FILTER_SECURITY_INTERCEPTOR"/> 
+		<custom-filter ref="concurrencyFilter" position="CONCURRENT_SESSION_FILTER"/>
+	</http>
+	
+
+	<!-- 认证管理器，注意为authentication-manager 设置alias别名  -->
+	<authentication-manager alias="authenticationManager">
+		<authentication-provider ref="authenticationProvider" />
+	</authentication-manager>
+	<!-- 认证提供者 -->
+	<beans:bean id="authenticationProvider" class="org.springframework.security.authentication.dao.DaoAuthenticationProvider">
+		<beans:property name="hideUserNotFoundExceptions" value="false" />
+		<beans:property name="userDetailsService" ref="userDetailService" />
+		<beans:property name="userCache" ref="userCache" />
+		<beans:property name="messageSource" ref="messageSource" />
+		<beans:property name="passwordEncoder" ref="passwordEncode" />
+		<beans:property name="saltSource" ref="saltSource" />
+	</beans:bean>
+	<!-- 配置密码加密类 -->
+	<beans:bean id="passwordEncode" class="org.springframework.security.authentication.encoding.Md5PasswordEncoder" />
+	<beans:bean id="saltSource" class="org.springframework.security.authentication.dao.ReflectionSaltSource">
+		<beans:property name="userPropertyToUse" value="username"/>
+	</beans:bean>	
+	
+	<!-- 用户详细信息管理：数据源、用户缓存（通过数据库管理用户、角色、权限、资源）。 -->
+	<beans:bean id="userDetailService" 
+		class="cn.com.aiidc.common.security.CustomUserDetailsService">
+	</beans:bean> 
+	 
+	<!-- 自定义访问决策器，决定某个用户具有的角色，是否有足够的权限去访问某个资源。 -->
+<!--  	<beans:bean id="accessDecisionManager"
+		class="cn.com.aiidc.common.security.CustomAccessDecisionManager">
+	</beans:bean> -->
+	
+	<!-- 
+	权限的前缀默认是ROLE_，通过配置无法修改框架中的默认前缀，只有手动注入"accessDecisionManager"
+	的投票器来实现，下面的配置就是我们自己使用"releVoter" 投票器，通过修改roleVoter 的 "rolePrefix" 属性来
+	修改权限前缀，此处没有设置。
+	
+	访问决策器，决定某个用户具有的角色，是否有足够的权限去访问某个资源。
+	-->
+	<beans:bean id="accessDecisionManager" class="org.springframework.security.access.vote.AffirmativeBased">
+		<beans:constructor-arg name="decisionVoters">
+			<beans:list>
+				<beans:ref bean="roleVoter"/>
+				<beans:ref bean="authenticatedVoter"/>
+			</beans:list>
+		</beans:constructor-arg>
+		<beans:property name="messageSource" ref="messageSource" />
+	</beans:bean>
+	<!-- 权限投票器 -->
+	<beans:bean id="roleVoter" class="org.springframework.security.access.vote.RoleVoter">
+		<beans:property name="rolePrefix" value="" />
+	</beans:bean> 
+	<!-- 认证投票器 -->
+	<beans:bean id="authenticatedVoter" class="org.springframework.security.access.vote.AuthenticatedVoter" />
+	
+	<!-- 自定义权限不足处理程序 -->
+	<beans:bean id="accessDeniedHandler" class="cn.com.aiidc.common.security.RequestAccessDeniedHandler">
+		<beans:property name="errorPage" value="/WEB-INF//jsp/403.jsp" />
+	</beans:bean>
+
+	<!-- 资源源数据定义，将所有的资源和权限对应关系建立起来，即定义某一资源可以被哪些角色去访问。 -->
+	<beans:bean id="customSecurityMetadataSource"
+		class="cn.com.aiidc.common.security.CustomInvocationSecurityMetadataSourceService">
+	</beans:bean> 
+
+	<!-- 启用用户的缓存功能 -->
+	<beans:bean id="userCache"
+		class="org.springframework.security.core.userdetails.cache.EhCacheBasedUserCache">
+		<beans:property name="cache" ref="userEhCache" />
+	</beans:bean>
+	
+	<beans:bean id="userEhCache" class="org.springframework.cache.ehcache.EhCacheFactoryBean">
+		<beans:property name="cacheName" value="userCache" />
+		<beans:property name="cacheManager" ref="cacheManager" />
+	</beans:bean>
+	
+	<beans:bean id="cacheManager"
+		class="org.springframework.cache.ehcache.EhCacheManagerFactoryBean" />
+		
+	<!-- spring security自带的与权限有关的数据读写Jdbc模板 -->
+	<beans:bean id="jdbcTemplate" class="org.springframework.jdbc.core.JdbcTemplate">
+		<beans:property name="dataSource" ref="dataSource" />
+	</beans:bean>
+	
+	<!-- 一个自定义的过滤拦截器，必须包含authenticationManager,
+		accessDecisionManager,securityMetadataSource三个属性。  -->
+	<beans:bean id="customFilter" class="org.springframework.security.web.access.intercept.FilterSecurityInterceptor">
+		<beans:property name="authenticationManager" ref="authenticationManager" /> 
+		<beans:property name="securityMetadataSource" ref="customSecurityMetadataSource" />
+		<beans:property name="accessDecisionManager" ref="accessDecisionManager" />
+	</beans:bean>
+<!-- 	<beans:bean id="customFilter" class="cn.com.aiidc.common.security.CustomFilterSecurityInterceptor">
+		<beans:property name="authenticationManager" ref="authenticationManager" /> 
+		<beans:property name="securityMetadataSource" ref="customSecurityMetadataSource" />
+		<beans:property name="accessDecisionManager" ref="accessDecisionManager" />
+	</beans:bean>	 -->
+	
+	<!-- ConcurrentSessionFilter过滤器配置(主要设置账户session过期路径) -->  
+	<beans:bean id="concurrencyFilter" class="org.springframework.security.web.session.ConcurrentSessionFilter">
+		<beans:constructor-arg name="sessionRegistry" ref="sessionRegistry" />
+		<beans:constructor-arg name="expiredUrl" value="/invalidSession.html" />
+	</beans:bean>
+	<!-- 实现一个账户同时只能登录一次 -->
+	<beans:bean id="concurrentSessionControlStrategy"
+		class="org.springframework.security.web.authentication.session.ConcurrentSessionControlAuthenticationStrategy">
+		<beans:constructor-arg name="sessionRegistry" ref="sessionRegistry" />
+		<beans:property name="maximumSessions" value="1" />
+		<beans:property name="exceptionIfMaximumExceeded" value="true" />
+	</beans:bean>
+	
+	<beans:bean id="sessionRegistry" class="org.springframework.security.core.session.SessionRegistryImpl" />
+</beans:beans>

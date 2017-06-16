@@ -1,0 +1,21 @@
+.website .siteTitle,.left-side{
+    float:left;
+}
+.website{
+    overflow: hidden;
+}
+.siteTitle{
+    margin-bottom: 15px;
+    font-weight: bold;
+}
+.left-side span{
+    display: inline-block;
+    height:25px;
+    line-height: 25px;
+}
+.easyui-linkbutton{
+    width:80px;
+}
+.buttonBox{
+    margin:20px 0 0 70px;
+}

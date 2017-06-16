@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans 
+	xmlns="http://www.springframework.org/schema/beans"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xmlns:context="http://www.springframework.org/schema/context"
+    xmlns:aop="http://www.springframework.org/schema/aop"
+    xsi:schemaLocation="
+    	http://www.springframework.org/schema/beans
+        http://www.springframework.org/schema/beans/spring-beans.xsd
+       	http://www.springframework.org/schema/context  
+       	http://www.springframework.org/schema/context/spring-context.xsd
+       	http://www.springframework.org/schema/aop
+       	http://www.springframework.org/schema/aop/spring-aop.xsd">
+ 
+    <!-- AOP 自动代理 -->
+	<context:component-scan base-package="cn.com.aiidc.common.aop"/>
+	<!-- 开启AOP注解标记的使用,例如@Aspect,@Before,@After -->
+	<aop:aspectj-autoproxy/>
+    <context:property-placeholder location="classpath:config/*.properties" />
+    <context:annotation-config />
+   
+    <context:component-scan base-package="cn.com.aiidc.cms.dao" />
+    
+    <context:component-scan base-package="cn.com.aiidc.cms.service"/>
+    
+   	<!-- 定义上下文返回的消息的国际化 -->
+	<bean id="messageSource"
+		class="org.springframework.context.support.ReloadableResourceBundleMessageSource" >
+		<property name="basename"
+			value="classpath:config/messages_zh_CN"/>
+	</bean>
+	
+	 <!--配置Quartz -->
+	 <bean id="quartzJob" class="cn.com.aiidc.cms.controller.PlanPub"></bean>
+	 <bean id="jobtask" class="org.springframework.scheduling.quartz.MethodInvokingJobDetailFactoryBean">
+		<property name="targetObject" ref="quartzJob" />
+		<property name="targetMethod" value="execute"/>
+	</bean>
+	<bean id="doTime" class="org.springframework.scheduling.quartz.CronTriggerFactoryBean">
+		<property name="jobDetail">
+            <ref bean="jobtask"/>
+        </property>
+		<property name="cronExpression">
+			<value>0 0/5 * * * ?</value>
+		</property>
+	</bean>
+	<bean id="startQuartz" lazy-init="false" autowire="no" class="org.springframework.scheduling.quartz.SchedulerFactoryBean">		
+		<property name="triggers">
+			<list><ref bean="doTime"/></list>
+		</property>
+	</bean>
+
+ 	<import resource="spring-orm.xml"/>
+ 	<import resource="spring-security-custom.xml" />
+	<!-- <import resource="spring-security-jdbc.xml"/> -->
+	
+	<!-- <import resource="spring-orm-local.xml"/> -->
+	<!-- <import resource="spring-security-ldap.xml"/> -->
+	
+</beans>
